@@ -29,9 +29,7 @@ import org.wso2.carbon.extension.identity.verification.mgt.exception.IdentityVer
 import org.wso2.carbon.extension.identity.verification.mgt.model.IdVClaim;
 import org.wso2.carbon.extension.identity.verification.mgt.model.IdVProperty;
 import org.wso2.carbon.extension.identity.verification.mgt.model.IdentityVerifierData;
-import org.wso2.carbon.extension.identity.verification.provider.model.IdVConfigProperty;
 import org.wso2.carbon.extension.identity.verification.provider.model.IdVProvider;
-import org.wso2.carbon.extension.identity.verification.provider.model.IdentityVerificationProvider;
 import org.wso2.carbon.identity.verification.onfido.connector.exception.OnfidoException;
 import org.wso2.carbon.identity.verification.onfido.connector.web.OnfidoAPIClient;
 
