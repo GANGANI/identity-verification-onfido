@@ -28,9 +28,9 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.extension.identity.verification.mgt.IdentityVerificationManager;
-import org.wso2.carbon.extension.identity.verification.provider.IdVProviderManager;
 import org.wso2.carbon.extension.identity.verification.mgt.IdentityVerifier;
 import org.wso2.carbon.extension.identity.verification.mgt.IdentityVerifierFactory;
+import org.wso2.carbon.extension.identity.verification.provider.IdVProviderManager;
 import org.wso2.carbon.identity.verification.onfido.connector.OnfidoIdentityVerifier;
 import org.wso2.carbon.identity.verification.onfido.connector.OnfidoIdentityVerifierFactory;
 
@@ -48,8 +48,7 @@ public class OnfidoIdVServiceComponent {
     protected void activate(ComponentContext ctxt) {
 
         try {
-            IdentityVerifierFactory onfidoIdentityVerifierFactory
-                    = new OnfidoIdentityVerifierFactory();
+            IdentityVerifierFactory onfidoIdentityVerifierFactory = new OnfidoIdentityVerifierFactory();
             ctxt.getBundleContext().registerService(IdentityVerifierFactory.class.getName(),
                     onfidoIdentityVerifierFactory, null);
 
@@ -57,10 +56,10 @@ public class OnfidoIdVServiceComponent {
             ctxt.getBundleContext().registerService(IdentityVerifier.class.getName(),
                     onfidoIdentityVerifier, null);
             if (log.isDebugEnabled()) {
-                log.debug("");
+                log.debug("OnfidoIdVService bundle activated successfully.");
             }
         } catch (Throwable e) {
-            log.fatal("", e);
+            log.fatal(" Error while activating OnfidoIdVService bundle ", e);
         }
     }
 
@@ -68,7 +67,7 @@ public class OnfidoIdVServiceComponent {
     protected void deactivate(ComponentContext ctxt) {
 
         if (log.isDebugEnabled()) {
-            log.debug("");
+            log.debug("OnfidoIdVService bundle is deactivated.");
         }
     }
 
@@ -77,7 +76,7 @@ public class OnfidoIdVServiceComponent {
             service = org.wso2.carbon.extension.identity.verification.mgt.IdentityVerificationManager.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetIdVClaimManager")
+            unbind = "unsetIdentityVerificationManager")
     protected void setIdentityVerificationManager(IdentityVerificationManager identityVerificationManager) {
 
         OnfidoIDVDataHolder.getInstance().setIdentityVerificationManager(identityVerificationManager);
@@ -103,5 +102,4 @@ public class OnfidoIdVServiceComponent {
 
         OnfidoIDVDataHolder.getInstance().setIdVProviderManager(null);
     }
-
 }

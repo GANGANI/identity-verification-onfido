@@ -21,9 +21,10 @@ package org.wso2.carbon.identity.verification.onfido.connector.exception;
 import org.wso2.carbon.identity.base.IdentityException;
 
 /**
- * This class contains the implementation of OnfidoIdentityVerifier.
+ * Exception class for Onfido connector.
  */
 public class OnfidoException extends IdentityException {
+
     public OnfidoException(String errorCode, String message) {
 
         super(errorCode, message);

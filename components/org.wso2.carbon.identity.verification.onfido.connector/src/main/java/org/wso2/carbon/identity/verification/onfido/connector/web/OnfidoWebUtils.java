@@ -21,46 +21,36 @@ package org.wso2.carbon.identity.verification.onfido.connector.web;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.BufferedHttpEntity;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.content.FileBody;
-import org.apache.http.entity.mime.content.StringBody;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHttpResponse;
 import org.wso2.carbon.identity.verification.onfido.connector.exception.OnfidoException;
 
-import java.io.File;
 import java.io.IOException;
 
-import static org.apache.commons.fileupload.FileUploadBase.FORM_DATA;
-import static org.apache.commons.fileupload.FileUploadBase.MULTIPART_FORM_DATA;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.APPLICANT_ID;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.APPLICATION_JSON;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.DOCUMENT_UPLOADED;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.TOKEN_HEADER;
 
 /**
  * The HYPRWebUtils class contains all the general helper functions required by the HYPR Authenticator.
  */
-public class HYPRWebUtils {
+public class OnfidoWebUtils {
 
-    private HYPRWebUtils() {
+    private OnfidoWebUtils() {
 
     }
 
     /**
      * Send an HTTP POST request.
      *
-     * @param apiToken    API token provided by HYPR.
+     * @param apiToken    API token provided by Onfido.
      * @param requestURL  The URL to which the POST request should be sent.
      * @param requestBody A hashmap that includes the parameters to be sent through the request.
      * @return httpResponse         The response received from the HTTP call.
-     * @throws IOException         Exception thrown when an error occurred during extracting the HTTP response content.
+     * @throws IOException     Exception thrown when an error occurred during extracting the HTTP response content.
      * @throws OnfidoException Exception thrown when an error occurred with the HTTP client connection.
      */
     public static HttpResponse httpPost(String apiToken, String requestURL, String requestBody)
@@ -68,32 +58,10 @@ public class HYPRWebUtils {
 
         HttpPost request = new HttpPost(requestURL);
         request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER + apiToken);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, APPLICATION_JSON);
+        request.addHeader(HttpHeaders.CONTENT_TYPE, APPLICATION_JSON);
         request.setEntity(new StringEntity(requestBody, ContentType.APPLICATION_JSON));
 
         CloseableHttpClient client = HTTPClientManager.getInstance().getHttpClient();
-        try (CloseableHttpResponse response = client.execute(request)) {
-            return toHttpResponse(response);
-        }
-    }
-
-    public static HttpResponse httpPost(String apiToken, String requestURL, String filePath,
-                                        String applicantId, String scenario) throws IOException {
-
-        HttpPost request = new HttpPost(requestURL);
-        request.addHeader(HttpHeaders.AUTHORIZATION, TOKEN_HEADER + apiToken);
-        request.setHeader(HttpHeaders.CONTENT_TYPE, MULTIPART_FORM_DATA);
-
-        MultipartEntityBuilder builder = MultipartEntityBuilder.create()
-                .addPart("file", new FileBody(new File(filePath)))
-                .addPart(APPLICANT_ID, new StringBody(applicantId, ContentType.TEXT_PLAIN));
-
-        if (DOCUMENT_UPLOADED.equals(scenario)) {
-            builder.addPart("type", new StringBody("driving_licence", ContentType.TEXT_PLAIN));
-        }
-        request.setEntity(builder.build());
-
-        CloseableHttpClient client = HttpClientBuilder.create().build();
         try (CloseableHttpResponse response = client.execute(request)) {
             return toHttpResponse(response);
         }

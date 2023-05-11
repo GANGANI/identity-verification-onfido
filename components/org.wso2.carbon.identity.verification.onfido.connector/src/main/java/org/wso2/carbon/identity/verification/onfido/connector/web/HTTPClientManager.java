@@ -111,15 +111,4 @@ public class HTTPClientManager {
         poolingHttpClientConnectionMgr.setDefaultMaxPerRoute(DEFAULT_MAX_CONNECTIONS);
         return poolingHttpClientConnectionMgr;
     }
-
-//    private static HYPRClientException handleServerException(
-//            HyprAuthenticatorConstants.ErrorMessages error, Throwable throwable, String... data) {
-//
-//        String description = error.getDescription();
-//        if (ArrayUtils.isNotEmpty(data)) {
-//            description = String.format(description, data);
-//        }
-//        return new HYPRClientException(error.getMessage(), description, error.getCode(), throwable);
-//    }
-
 }

@@ -31,10 +31,7 @@ import org.wso2.carbon.identity.verification.onfido.connector.exception.OnfidoEx
 import java.io.IOException;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.APPLICANT_ID;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.BASE_URL;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.DOCUMENT_UPLOADED;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.PHOTO_UPLOADED;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.TOKEN;
 
 /**
@@ -48,8 +45,21 @@ public class OnfidoAPIClient {
 
         String apiToken = idVConfigPropertyMap.get(TOKEN);
         String uri = idVConfigPropertyMap.get(BASE_URL) + "/applicants";
-        HttpResponse response = HYPRWebUtils.httpPost(apiToken, uri, idvClaimsWithValues.toString());
+        HttpResponse response = OnfidoWebUtils.httpPost(apiToken, uri, idvClaimsWithValues.toString());
         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
+            return getJsonObject(response);
+        }
+        return null;
+    }
+
+    public static JsonObject createSDKToken(Map<String, String> idVConfigPropertyMap, JSONObject sdkTokenRequestBody)
+            throws OnfidoException, IOException {
+
+        String apiToken = idVConfigPropertyMap.get(TOKEN);
+        String uri = idVConfigPropertyMap.get(BASE_URL) + "/sdk_token";
+
+        HttpResponse response = OnfidoWebUtils.httpPost(apiToken, uri, sdkTokenRequestBody.toString());
+        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
             return getJsonObject(response);
         }
         return null;
@@ -63,49 +73,17 @@ public class OnfidoAPIClient {
         return gson.fromJson(jsonResponse, JsonObject.class);
     }
 
-    public static JsonObject uploadDocument(Map<String, String> idVConfigPropertyMap,
-                                            Map<String, String> idVPropertyMap)
-            throws OnfidoException, IOException {
-
-        String apiToken = idVConfigPropertyMap.get(TOKEN);
-        String uri = idVConfigPropertyMap.get(BASE_URL) + "/documents";
-        String applicationId = idVPropertyMap.get(APPLICANT_ID);
-        HttpResponse response = HYPRWebUtils.httpPost(apiToken, uri,
-                        "/home/gangani/Pictures/sample_driving_licence.png", applicationId, DOCUMENT_UPLOADED);
-        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
-            return getJsonObject(response);
-        }
-        return null;
-    }
-
-    public static JsonObject uploadPhoto(Map<String, String> idVConfigPropertyMap,
-                                            Map<String, String> idVPropertyMap)
-            throws OnfidoException, IOException {
-
-        String apiToken = idVConfigPropertyMap.get(TOKEN);
-        String uri = idVConfigPropertyMap.get(BASE_URL) + "/live_photos";
-        String applicationId = idVPropertyMap.get(APPLICANT_ID);
-        HttpResponse response = HYPRWebUtils.httpPost(apiToken, uri,
-                "/home/gangani/Pictures/sample_driving_licence.png", applicationId, PHOTO_UPLOADED);
-        if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
-            JsonObject jsonObject = getJsonObject(response);
-            return getJsonObject(response);
-        }
-        return null;
-    }
-
-    public static JsonObject verificationCheck(Map<String, String> idVConfigPropertyMap,
-                                               Map<String, String> idVPropertyMap)
+    public static JsonObject verificationCheck(Map<String, String> idVConfigPropertyMap)
             throws OnfidoException, IOException {
 
         String apiToken = idVConfigPropertyMap.get(TOKEN);
         String uri = idVConfigPropertyMap.get(BASE_URL) + "/checks";
 
-        HttpResponse response = HYPRWebUtils.
+        HttpResponse response = OnfidoWebUtils.
                 httpPost(apiToken, uri,
                         "{\n" +
-                                "  \"applicant_id\": \"f29cfa8b-80cb-4ad5-a2b4-891fdd5a7b56\",\n" +
-                                "  \"report_names\": [\"document\", \"document_with_driving_licence_information\"]\n" +
+                                "  \"applicant_id\": \"fddd5f0f-4950-4371-9270-ed12296eacbb\",\n" +
+                                "  \"report_names\": [\"document\", \"facial_similarity_photo\"]\n" +
                                 "}");
         if (response.getStatusLine().getStatusCode() == HttpStatus.SC_CREATED) {
 

@@ -23,17 +23,17 @@ import org.wso2.carbon.extension.identity.verification.mgt.IdentityVerifierFacto
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.ONFIDO;
 
 /**
- * This class contains the implementation for the OnfidoIdentityVerifierProvider.
+ * This class contains the implementation for the IdentityVerifierFactory.
  */
 public class OnfidoIdentityVerifierFactory implements IdentityVerifierFactory {
 
     @Override
-    public IdentityVerifier getIdentityVerifier(String identityVerifierName) {
+    public IdentityVerifier getIdentityVerifier(String identityVerifierType) {
 
-        if (ONFIDO.equals(identityVerifierName)) {
+        if (ONFIDO.equals(identityVerifierType)) {
             return new OnfidoIdentityVerifier();
         } else {
-            throw new IllegalArgumentException("Identity verifier not found for the name: " + identityVerifierName);
+            throw new IllegalArgumentException("Identity verifier not found for the type: " + identityVerifierType);
         }
     }
 

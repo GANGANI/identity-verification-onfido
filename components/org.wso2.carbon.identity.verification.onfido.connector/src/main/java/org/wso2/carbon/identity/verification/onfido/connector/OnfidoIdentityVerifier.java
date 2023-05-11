@@ -18,19 +18,18 @@
 package org.wso2.carbon.identity.verification.onfido.connector;
 
 import com.google.gson.JsonObject;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.wso2.carbon.extension.identity.verification.mgt.AbstractIdentityVerifier;
 import org.wso2.carbon.extension.identity.verification.mgt.IdentityVerifier;
+import org.wso2.carbon.extension.identity.verification.mgt.exception.IdentityVerificationClientException;
 import org.wso2.carbon.extension.identity.verification.mgt.exception.IdentityVerificationException;
 import org.wso2.carbon.extension.identity.verification.mgt.model.IdVClaim;
 import org.wso2.carbon.extension.identity.verification.mgt.model.IdVProperty;
 import org.wso2.carbon.extension.identity.verification.mgt.model.IdentityVerifierData;
 import org.wso2.carbon.extension.identity.verification.provider.model.IdVProvider;
 import org.wso2.carbon.identity.verification.onfido.connector.exception.OnfidoException;
+import org.wso2.carbon.identity.verification.onfido.connector.internal.OnfidoIDVDataHolder;
 import org.wso2.carbon.identity.verification.onfido.connector.web.OnfidoAPIClient;
 
 import java.io.IOException;
@@ -42,104 +41,116 @@ import java.util.Map;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.APPLICANT_ID;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.CHECK_ID;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.COMPLETED;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.DOCUMENT_ID;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.DOCUMENT_UPLOADED;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.ID;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.INITIATED;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.IN_PROGRESS;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.ONFIDO;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.PHOTO_ID;
-import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.PHOTO_UPLOADED;
+import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.SDK_TOKEN;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.SOURCE;
 import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.STATUS;
+import static org.wso2.carbon.identity.verification.onfido.connector.constants.OnfidoConstants.TOKEN;
 
 /**
  * This class contains the implementation of OnfidoIdentityVerifier.
  */
 public class OnfidoIdentityVerifier extends AbstractIdentityVerifier implements IdentityVerifier {
 
-    private static final Log log = LogFactory.getLog(OnfidoIdentityVerifier.class);
-
     @Override
     public IdentityVerifierData verifyIdentity(String userId, IdentityVerifierData identityVerifierData, int tenantId)
             throws IdentityVerificationException {
 
-        Map<String, String> idVPropertyMap = getIdVPropertyMap(identityVerifierData);
         IdVProvider idVProvider = getIdVProvider(identityVerifierData, tenantId);
+        Map<String, String> idVProperties = getIdVPropertyMap(identityVerifierData);
+        Map<String, String> idVClaimsWithValues =
+                getIdVPClaimWithValueMap(userId, idVProvider, identityVerifierData, tenantId);
+        Map<String, String> idVProviderConfigProperties = getIdVConfigPropertyMap(idVProvider);
         JSONObject responseObject = new JSONObject();
+        List<IdVClaim> idVClaims;
+
         try {
-            if (idVPropertyMap.containsKey(STATUS)) {
-                Map<String, String> idVConfigPropertyMap = getIdVConfigPropertyMap(idVProvider);
-                switch (idVPropertyMap.get(STATUS)) {
+            if (idVProperties.containsKey(STATUS)) {
+                switch (idVProperties.get(STATUS)) {
                     case INITIATED:
-                        Map<String, String> idVClaimsWithValues =
-                                getIdVClaimsWithValues(userId, idVProvider, tenantId);
-                        JSONObject idVClaimRequestBody = getIdVClaimRequestBody(idVClaimsWithValues);
-                        JsonObject onFidoJsonObject =
-                                OnfidoAPIClient.createApplicantResponse(idVConfigPropertyMap, idVClaimRequestBody);
+                        JsonObject onFidoJsonObject = null;
+                        String applicantId = null;
+                        for (IdVClaim idVClaim : identityVerifierData.getIdVClaims()) {
+                            IdVClaim verificationClaim = OnfidoIDVDataHolder.getInstance().
+                                    getIdentityVerificationManager().getIdVClaim(userId, idVClaim.getClaimUri(),
+                                            idVProvider.getIdVProviderUuid(), tenantId);
+                            if (verificationClaim.getMetadata().get(APPLICANT_ID) != null) {
+                                idVClaimsWithValues.remove(idVClaim.getClaimUri());
+                            }
+                        }
+                        if (idVClaimsWithValues.isEmpty()) {
+                            applicantId = idVProperties.get(APPLICANT_ID);
+                        } else {
+                            JSONObject applicantRequestBody = getApplicantRequestBody(idVClaimsWithValues);
+                            onFidoJsonObject = OnfidoAPIClient.
+                                    createApplicantResponse(idVProviderConfigProperties, applicantRequestBody);
+                            if (onFidoJsonObject != null) {
+                                applicantId = onFidoJsonObject.get(ID).getAsString();
+                            }
+                        }
+
                         responseObject.put(STATUS, INITIATED);
                         responseObject.put(SOURCE, ONFIDO);
-                        if (onFidoJsonObject != null) {
-                            responseObject.put(APPLICANT_ID, onFidoJsonObject.get(ID).toString());
-                        }
-                        break;
-                    case DOCUMENT_UPLOADED:
-                        JsonObject uploadDocumentJsonObject =
-                                OnfidoAPIClient.uploadDocument(idVConfigPropertyMap, idVPropertyMap);
-                        responseObject.put(STATUS, DOCUMENT_UPLOADED);
-                        responseObject.put(SOURCE, ONFIDO);
-                        if (uploadDocumentJsonObject != null) {
-                            responseObject.put(APPLICANT_ID, uploadDocumentJsonObject.get(APPLICANT_ID).toString());
-                            responseObject.put(DOCUMENT_ID, uploadDocumentJsonObject.get(ID).toString());
-                        }
-                        break;
-                    case PHOTO_UPLOADED:
-                        JsonObject uploadPhotoJsonObject =
-                                OnfidoAPIClient.uploadPhoto(idVConfigPropertyMap, idVPropertyMap);
-                        responseObject.put(STATUS, DOCUMENT_UPLOADED);
-                        responseObject.put(SOURCE, ONFIDO);
-                        if (uploadPhotoJsonObject != null) {
-                            responseObject.put(APPLICANT_ID, idVPropertyMap.get(APPLICANT_ID));
-                            responseObject.put(PHOTO_ID, uploadPhotoJsonObject.get(ID).toString());
+                        responseObject.put(APPLICANT_ID, applicantId);
+
+                        JSONObject sdkTokenRequestBody = new JSONObject();
+                        sdkTokenRequestBody.put(APPLICANT_ID, applicantId);
+                        JsonObject sdkTokenJsonObject =
+                                OnfidoAPIClient.createSDKToken(idVProviderConfigProperties, sdkTokenRequestBody);
+
+                        if (sdkTokenJsonObject != null) {
+                            responseObject.put(SDK_TOKEN, sdkTokenJsonObject.get(TOKEN).getAsString());
+                        } else {
+                            throw new IdentityVerificationException("Error while retrieving the sdk token.",
+                                    "", null);
                         }
                         break;
                     case COMPLETED:
                         JsonObject checkJsonObject =
-                                OnfidoAPIClient.verificationCheck(idVConfigPropertyMap, idVPropertyMap);
-                        responseObject.put(STATUS, IN_PROGRESS);
-                        responseObject.put(SOURCE, ONFIDO);
+                                OnfidoAPIClient.verificationCheck(idVProviderConfigProperties);
                         if (checkJsonObject != null) {
+                            responseObject.put(STATUS, IN_PROGRESS);
+                            responseObject.put(SOURCE, ONFIDO);
                             responseObject.put(APPLICANT_ID, checkJsonObject.get(APPLICANT_ID).toString());
                             responseObject.put(CHECK_ID, checkJsonObject.get(ID).toString());
+                        } else {
+                            throw new IdentityVerificationException("Error while retrieving the sdk token.",
+                                    "", null);
                         }
                         break;
                 }
-
-                List<IdVClaim> idVClaims = getIdVClaims(idVProvider, responseObject);
-                storeIdVClaims(userId, idVClaims, tenantId);
+                idVClaims = getIdVClaims(userId, idVProvider, responseObject, idVClaimsWithValues);
+                updateIdVClaims(userId, idVClaims, tenantId);
                 identityVerifierData.setIdVClaims(idVClaims);
+            } else {
+                throw new IdentityVerificationClientException("Status is not defined.", "", null);
             }
         } catch (IOException e) {
-            log.error("Error while creating the applicant response.", e);
+            throw new IdentityVerificationException("Error while creating the json object.", "", e);
         } catch (JSONException e) {
-            log.error("Error while creating the json object.", e);
+            throw new IdentityVerificationException("Error while creating the json object.", "", e);
         } catch (OnfidoException e) {
-            throw new RuntimeException(e);
+            throw new IdentityVerificationException("Error while creating the json object.", "", e);
         }
         return identityVerifierData;
     }
 
-    private List<IdVClaim> getIdVClaims(IdVProvider idVProvider, JSONObject responseObject) {
+    private List<IdVClaim> getIdVClaims(String userId, IdVProvider idVProvider, JSONObject responseObject,
+                                        Map<String, String> idVClaimsWithValues) {
 
         Map<String, String> verificationClaims = getClaimMappings(idVProvider);
         List<IdVClaim> idVClaims = new ArrayList<>();
         for (Map.Entry<String, String> claimMapping : verificationClaims.entrySet()) {
             IdVClaim idVClaim = new IdVClaim();
+            idVClaim.setUserId(userId);
             idVClaim.setClaimUri(claimMapping.getKey());
-            idVClaim.setClaimValue(claimMapping.getValue());
-            idVClaim.setMetadata(responseObject);
-            idVClaim.setIdVPId(ONFIDO);
-            idVClaim.setStatus(false);
+            idVClaim.setClaimValue(idVClaimsWithValues.get(claimMapping.getValue()));
+//            idVClaim.setMetadata(responseObject);
+            idVClaim.setIdVPId(idVProvider.getIdVProviderUuid());
+            idVClaim.setIsVerified(false);
             idVClaims.add(idVClaim);
         }
         return idVClaims;
@@ -155,7 +166,7 @@ public class OnfidoIdentityVerifier extends AbstractIdentityVerifier implements 
         return idVPropertyMap;
     }
 
-    private JSONObject getIdVClaimRequestBody(Map<String, String> idVClaimsWithValues) {
+    private JSONObject getApplicantRequestBody(Map<String, String> idVClaimsWithValues) {
 
         JSONObject idVClaimRequestBody = new JSONObject();
         for (Map.Entry<String, String> idVClaim : idVClaimsWithValues.entrySet()) {

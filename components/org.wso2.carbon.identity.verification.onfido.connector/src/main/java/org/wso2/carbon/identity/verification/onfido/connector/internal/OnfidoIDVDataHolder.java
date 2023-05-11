@@ -61,7 +61,7 @@ public class OnfidoIDVDataHolder {
         }
         return identityVerificationManager;
     }
-    
+
     public void setIdentityVerificationManager(IdentityVerificationManager identityVerificationManager) {
 
         OnfidoIDVDataHolder.identityVerificationManager = identityVerificationManager;
