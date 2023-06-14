@@ -1,0 +1,8 @@
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/DefaultApi.java
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/DefaultApiService.java
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/factories/DefaultApiServiceFactory.java
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/model/Error.java
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/model/VerifyRequest.java
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/model/VerifyRequestPayload.java
+src/gen/java/org/wso2/carbon/identity/verification/onfido/api/v1/model/VerifyRequestPayloadObject.java
+src/main/java/org/wso2/carbon/identity/verification/onfido/api/v1/impl/DefaultApiServiceImpl.java
