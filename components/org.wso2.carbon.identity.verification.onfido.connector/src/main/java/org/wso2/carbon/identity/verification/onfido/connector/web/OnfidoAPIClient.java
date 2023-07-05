@@ -23,7 +23,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
-import org.wso2.carbon.extension.identity.verification.mgt.exception.IdentityVerificationServerException;
 import org.wso2.carbon.identity.verification.onfido.connector.exception.OnfidoServerException;
 
 import java.io.IOException;
@@ -75,7 +74,7 @@ public class OnfidoAPIClient {
      * @param idVConfigPropertyMap Config property map of the Onfido IDV connector.
      * @param sdkTokenRequestBody  Request body of the SDK token request.
      * @return SDK token response.
-     * @throws IdentityVerificationServerException Identity verification server exception.
+     * @throws OnfidoServerException Identity verification server exception.
      */
     public static JSONObject createSDKToken(Map<String, String> idVConfigPropertyMap, JSONObject sdkTokenRequestBody)
             throws OnfidoServerException {
